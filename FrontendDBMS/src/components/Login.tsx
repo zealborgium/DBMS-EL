@@ -78,10 +78,12 @@ function Login() {
                   className="w-100"
                   style={buttonStyle} // Applying custom button styles
                   onMouseOver={(e) =>
-                    (e.target.style.backgroundColor =
+                    ((e.target as HTMLElement).style.backgroundColor =
                       buttonHoverStyle.backgroundColor)
                   }
-                  onMouseOut={(e) => (e.target.style.backgroundColor = "")}
+                  onMouseOut={(e) =>
+                    ((e.target as HTMLElement).style.backgroundColor = "")
+                  }
                 >
                   Login
                 </Button>
