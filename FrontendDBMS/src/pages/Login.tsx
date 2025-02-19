@@ -1,52 +1,60 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
-const containerStyle = {
-  backgroundColor: "#f8f9fa",
-};
-const cardStyle = {
-  borderRadius: "10px",
-};
-const cardBodyStyle = {
-  padding: "3rem",
-};
-const formControlStyle = {
-  padding: "0.8rem",
-  borderRadius: "8px",
-  fontSize: "1rem",
-};
-const buttonStyle = {
-  padding: "0.8rem",
-  borderRadius: "8px",
-};
-const buttonHoverStyle = {
-  backgroundColor: "#007BFF",
-};
+// Define user roles
+type UserRole = "author" | "reviewer" | "admin";
 
-function Login() {
+const Login = () => {
   const navigate = useNavigate();
+  const authContext = useContext(AuthContext);
+
+  if (!authContext) {
+    throw new Error("AuthContext is undefined, ensure AuthProvider is used.");
+  }
+
+  const { login } = authContext;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/home");
+    setError(null);
+
+    // Simulated API Response (Replace with actual API call)
+    const mockUser = {
+      id: "123",
+      email,
+      role: email.includes("admin") ? "admin" : "author", // Assign role based on email pattern
+      token: "mock-jwt-token",
+    };
+
+    // Validate credentials (Basic check, replace with real authentication)
+    if (email && password) {
+      login(mockUser);
+      if (mockUser.role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/home");
+      }
+    } else {
+      setError("Invalid email or password.");
+    }
   };
 
   return (
     <Container
       fluid
-      className="min-vh-100 d-flex justify-content-center align-items-center"
-      style={containerStyle} // Applying background color here
+      className="min-vh-100 d-flex justify-content-center align-items-center bg-light"
     >
       <Row className="w-100">
         <Col md={6} lg={4} className="mx-auto">
-          <Card className="shadow-lg border-0 rounded-3" style={cardStyle}>
-            <Card.Body style={cardBodyStyle}>
-              <h2 className="text-center text-primary mb-4">
-                Login to Your Account
-              </h2>
+          <Card className="shadow-lg border-0 rounded-3">
+            <Card.Body className="p-4">
+              <h2 className="text-center text-primary mb-4">Login</h2>
+              {error && <p className="text-danger text-center">{error}</p>}
               <Form onSubmit={handleSubmit}>
                 <Form.Group controlId="formBasicEmail" className="mb-3">
                   <Form.Label>Email address</Form.Label>
@@ -56,7 +64,6 @@ function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    style={formControlStyle} // Applying custom form styles
                   />
                 </Form.Group>
 
@@ -68,23 +75,10 @@ function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    style={formControlStyle} // Applying custom form styles
                   />
                 </Form.Group>
 
-                <Button
-                  variant="primary"
-                  type="submit"
-                  className="w-100"
-                  style={buttonStyle} // Applying custom button styles
-                  onMouseOver={(e) =>
-                    ((e.target as HTMLElement).style.backgroundColor =
-                      buttonHoverStyle.backgroundColor)
-                  }
-                  onMouseOut={(e) =>
-                    ((e.target as HTMLElement).style.backgroundColor = "")
-                  }
-                >
+                <Button variant="primary" type="submit" className="w-100">
                   Login
                 </Button>
               </Form>
@@ -94,6 +88,6 @@ function Login() {
       </Row>
     </Container>
   );
-}
+};
 
 export default Login;
