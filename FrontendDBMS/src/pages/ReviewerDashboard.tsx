@@ -1,11 +1,32 @@
-// src/pages/ReviewerDashboard.tsx
-import React, { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import API from "../api";
 
 const ReviewerDashboard = () => {
-  const auth = useContext(AuthContext);
-  const navigate = useNavigate();
+  const [papers, setPapers] = useState([]);
+  const [feedback, setFeedback] = useState("");
+  const [selectedPaper, setSelectedPaper] = useState("");
+
+  useEffect(() => {
+    const fetchAssignedPapers = async () => {
+      const { data } = await API.get("/api/papers/reviewer-papers");
+      setPapers(data);
+    };
+
+    fetchAssignedPapers();
+  }, []);
+
+  const submitReview = async () => {
+    try {
+      await API.post("/api/papers/review", {
+        paperId: selectedPaper,
+        feedback,
+        status: "accepted",
+      });
+      alert("Review submitted!");
+    } catch (error) {
+      alert("Error submitting review");
+    }
+  };
 
   return (
     <div className="container mt-5 pt-5 shadow p-4 bg-white rounded">

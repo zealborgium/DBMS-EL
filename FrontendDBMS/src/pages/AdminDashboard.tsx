@@ -11,9 +11,14 @@ const AdminDashboard = () => {
   const [filterStatus, setFilterStatus] = useState<string>("All");
 
   useEffect(() => {
-    // Fetch papers and users data on component mount
-    getPapers().then(setPapers);
-    getUsers().then(setUsers);
+    const fetchData = async () => {
+      const papersRes = await API.get("/api/papers/all");
+      const reviewersRes = await API.get("/api/users/reviewers");
+      setPapers(papersRes.data);
+      setReviewers(reviewersRes.data);
+    };
+
+    fetchData();
   }, []);
 
   // Function to handle reviewer assignment

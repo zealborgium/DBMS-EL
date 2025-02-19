@@ -1,56 +1,94 @@
-import { createContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  ReactNode,
+} from "react";
+import api from "/DBMS-EL/BackendDBMS/src/utils/axiosInstance";
+import jwtDecode from "jwt-decode"; // Install via `npm install jwt-decode`
 
-// Define user roles
+// ✅ Define user roles
 type UserRole = "author" | "reviewer" | "admin" | null;
 
-// Define user structure
+// ✅ Define user structure
 interface User {
   id: string;
+  name: string;
   email: string;
   role: UserRole;
-  token: string;
 }
 
-// Define authentication context structure
+// ✅ Define authentication context structure
 interface AuthContextType {
   user: User | null;
-  login: (userData: User) => void;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  isLoading: boolean;
+  isAuthenticated: boolean;
 }
 
-// Create context
-export const AuthContext = createContext<AuthContextType | null>(null);
+// ✅ Create authentication context
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Auth Provider Component
+// ✅ Auth Provider Component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is already logged in (Persistent Login)
+  // ✅ Check if user is already logged in (Persistent Login)
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        setUser({
+          id: decoded.id,
+          name: decoded.name,
+          email: decoded.email,
+          role: decoded.role,
+        });
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      } catch (error) {
+        console.error("Invalid token:", error);
+        logout();
+      }
     }
-    setIsLoading(false);
   }, []);
 
-  // Login function
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
+  // ✅ Login function
+  const login = async (email: string, password: string) => {
+    try {
+      const res = await api.post("/auth/login", { email, password });
+      const { token, user } = res.data;
+
+      // Store JWT token
+      localStorage.setItem("token", token);
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      setUser(user);
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
   };
 
-  // Logout function
+  // ✅ Logout Function
   const logout = () => {
+    localStorage.removeItem("token");
+    delete api.defaults.headers.common["Authorization"];
     setUser(null);
-    localStorage.removeItem("user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
-      {!isLoading && children}
+    <AuthContext.Provider
+      value={{ user, login, logout, isAuthenticated: !!user }}
+    >
+      {children}
     </AuthContext.Provider>
   );
+};
+
+// ✅ Custom Hook to use Auth Context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
+  return context;
 };
