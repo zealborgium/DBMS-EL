@@ -11,7 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AuthorDashboard from "./pages/AuthorDashboard";
 import ReviewerDashboard from "./pages/ReviewerDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { AuthProvider, AuthContext } from "./context/AuthContext";
+import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { useContext } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 

@@ -6,7 +6,7 @@ import {
   ReactNode,
 } from "react";
 import api from "/DBMS-EL/BackendDBMS/src/utils/axiosInstance";
-import jwtDecode from "jwt-decode"; // Install via `npm install jwt-decode`
+import { jwtDecode } from "jwt-decode";
 
 // ✅ Define user roles
 type UserRole = "author" | "reviewer" | "admin" | null;
@@ -23,6 +23,12 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
+  signup: (
+    name: string,
+    email: string,
+    password: string,
+    role: UserRole
+  ) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -37,9 +43,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // ✅ Check if user is already logged in (Persistent Login)
   useEffect(() => {
     const token = localStorage.getItem("token");
+
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
+        if (!decoded.email || typeof decoded.email !== "string") {
+          throw new Error("Invalid token format");
+        }
         setUser({
           id: decoded.id,
           name: decoded.name,
@@ -58,19 +68,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       const res = await api.post("/auth/login", { email, password });
+
+      // ✅ Ensure response contains correct user data
+      if (!res.data || !res.data.token || !res.data.user) {
+        throw new Error("Invalid response from server");
+      }
+
       const { token, user } = res.data;
 
-      // Store JWT token
+      // ✅ Validate user object structure
+      if (!user.email || typeof user.email !== "string") {
+        throw new Error("Invalid user data: Email must be a string");
+      }
+
+      // ✅ Store JWT token
       localStorage.setItem("token", token);
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      setUser(user);
+      // ✅ Ensure setUser receives a valid object
+      setUser({
+        id: user.id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      });
+
+      console.log("✅ User logged in:", user);
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("❌ Login failed:", error);
     }
   };
 
-  // ✅ Logout Function
+  // ✅ Signup function
+  const signup = async (
+    name: string,
+    email: string,
+    password: string,
+    role: UserRole
+  ) => {
+    try {
+      const res = await api.post("/auth/signup", {
+        name,
+        email,
+        password,
+        role,
+      });
+      console.log("Signup response:", res.data);
+    } catch (error) {
+      console.error("Signup failed:", error);
+    }
+  };
+
+  // ✅ Logout function
   const logout = () => {
     localStorage.removeItem("token");
     delete api.defaults.headers.common["Authorization"];
@@ -79,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, logout, isAuthenticated: !!user }}
+      value={{ user, login, signup, logout, isAuthenticated: !!user }}
     >
       {children}
     </AuthContext.Provider>
@@ -92,3 +141,6 @@ export const useAuth = () => {
   if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 };
+
+// ✅ Correctly Export `AuthContext`
+export { AuthContext };

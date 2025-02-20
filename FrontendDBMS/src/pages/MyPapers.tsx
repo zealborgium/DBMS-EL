@@ -8,7 +8,7 @@ import {
   Spinner,
   Alert,
 } from "react-bootstrap";
-import api from "../utils/axiosInstance";
+import api from "/DBMS-EL/BackendDBMS/src/utils/axiosInstance";
 
 interface Paper {
   _id: string;
